@@ -2,6 +2,8 @@ import ChatwootClient from '@chatwoot/node'
 import { processVkAttachment, vk } from './vk.js'
 import axios from 'axios'
 import FormData from 'form-data'
+import dotenv from 'dotenv';
+dotenv.config();
 
 export const chatwootAccountId = Number(process.env.CHATWOOT_ACCOUNT_ID)
 export const chatwootInboxId = Number(process.env.CHATWOOT_INBOX_ID)

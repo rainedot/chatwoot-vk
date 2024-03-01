@@ -6,6 +6,8 @@ import {
     processChatwootAttachment,
     sendMessage,
 } from './chatwoot.js'
+import dotenv from 'dotenv';
+dotenv.config();
 
 export const vk = new VK({
     token: process.env.VK_ACCESS_TOKEN,
