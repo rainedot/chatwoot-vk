@@ -14,7 +14,7 @@ export const vk = new VK({
   token: process.env.VK_ACCESS_TOKEN,
 })
 
-const createNewTicketMenu = Keyboard.builder()
+export const createNewTicketMenu = Keyboard.builder()
   .textButton({label: 'Create a new ticket', payload: 'create_ticket', color: 'positive'})
 
 export const closeTicketMenu = Keyboard.builder()

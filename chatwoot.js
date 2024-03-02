@@ -1,5 +1,5 @@
 import ChatwootClient from '@chatwoot/node'
-import {closeTicketMenu, processVkAttachment, vk} from './vk.js'
+import {closeTicketMenu, createNewTicketMenu, processVkAttachment, vk} from './vk.js'
 import axios from 'axios'
 import FormData from 'form-data'
 import dotenv from 'dotenv';
@@ -115,7 +115,7 @@ export async function processChatwootMessage(data) {
     message: data.content ?? '',
     attachment: attachments.map(a => a.toString()).join(','),
     random_id: Math.floor(Math.random() * Math.pow(10, 100)),
-    keyboard: conversation.status === 'resolved' ? closeTicketMenu : undefined,
+    keyboard: conversation.status === 'resolved' ? createNewTicketMenu : closeTicketMenu,
   })
 }
 
