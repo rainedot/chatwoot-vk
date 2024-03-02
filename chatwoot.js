@@ -114,8 +114,7 @@ export async function processChatwootMessage(data) {
     await vk.api.messages.send({
       user_id: contact.identifier,
       message: data.content ?? '',
-      attachment: attachments.map(a => a.toString()).join(','),
-      random_id: Math.floor(Math.random() * Math.pow(10, 100)),
+      attachment: attachments.length === 0 ? undefined : attachments.map(a => a.toString()).join(','),
       keyboard: conversation.status === 'resolved' ? createNewTicketMenu : closeTicketMenu,
     }),
     'vk ressp'
