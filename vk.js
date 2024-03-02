@@ -54,7 +54,7 @@ export async function processVkMessage(ctx) {
 
   const conversation = await findChatwootConversation(contact);
 
-  if (conversation.status !== 'open') {
+  if (!conversation || conversation?.status !== 'open') {
     await ctx.reply(`Главное меню`, {
       keyboard: createNewTicketMenu,
     });
