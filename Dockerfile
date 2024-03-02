@@ -1,7 +1,14 @@
-FROM node:18
-WORKDIR /home/vk-chatwoot
+FROM node:19-alpine as base
+
+FROM base as deps
+WORKDIR /app
+
+COPY package*.json ./
 
 RUN npm ci
-ADD . .
+
+FROM base as runner
+WORKDIR /app
+COPY . .
 
 CMD npm start
