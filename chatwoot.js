@@ -65,16 +65,11 @@ export async function findChatwootConversation(contact) {
 
 /**
  *
- * @param contact {any}
+ * @param conversation {any}
  * @param status {'resolved' | 'open' | 'pending'}
  * @return {Promise<*>}
  */
-export async function setChatwootConversationStatus(contact, status) {
-  const { data: { payload } } = await chatwoot.contacts(chatwootAccountId).getConversationsByContactId(contact.id)
-
-  if (!payload?.[0]) throw new Error('Conversation not found(0)');
-  const conversation = payload[0];
-
+export async function setChatwootConversationStatus(conversation, status) {
   return chatwoot.conversations(conversation.id).toggleStatus(conversation.id, status);
 }
 
