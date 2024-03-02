@@ -1,5 +1,5 @@
 import ChatwootClient from '@chatwoot/node'
-import { processVkAttachment, vk } from './vk.js'
+import {closeTicketMenu, processVkAttachment, vk} from './vk.js'
 import axios from 'axios'
 import FormData from 'form-data'
 import dotenv from 'dotenv';
@@ -55,11 +55,26 @@ export async function getOrCreateChatwootConversation(contact) {
     return conversation
 }
 
-async function findChatwootConversation(contact) {
+export async function findChatwootConversation(contact) {
     const { data } = await chatwoot.contacts(chatwootAccountId).getConversationsByContactId(contact.id)
     if (!data.payload || data.payload.length === 0) return null
     return data.payload.filter(conversation => conversation['inbox_id'] === chatwootInboxId)
         .sort((a, b) => b.id - a.id)[0]
+}
+
+/**
+ *
+ * @param contact {any}
+ * @param status {'resolved' | 'open' | 'pending'}
+ * @return {Promise<*>}
+ */
+export async function setChatwootConversationStatus(contact, status) {
+    const { data: { payload } } = await chatwoot.contacts(chatwootAccountId).getConversationsByContactId(contact.id)
+
+    if(!payload?.[0]) throw new Error('Conversation not found(0)');
+    const conversation = payload[0];
+
+    return chatwoot.conversations(conversation.id).toggleStatus(conversation.id, status);
 }
 
 async function createChatwootConversation(contact) {
@@ -99,11 +114,13 @@ export async function processChatwootMessage(data) {
         message: data.content ?? '',
         attachment: attachments.map(a => a.toString()).join(','),
         random_id: Math.floor(Math.random() * Math.pow(10, 100)),
+        keyboard: closeTicketMenu,
     })
 }
 
 export async function sendMessage(conversationId, params, files = []) {
     if (!files) return await chatwoot.conversations(chatwootAccountId).sendMessage(conversationId, params)
+    chatwoot.conversations(chatwootAccountId)
     const form = new FormData()
     form.append('content', params.content ?? '')
     form.append('message_type', params.message_type)
