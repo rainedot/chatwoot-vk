@@ -4,7 +4,7 @@ import {
   getOrCreateChatwootContact,
   getOrCreateChatwootConversation, setChatwootConversationStatus,
   processChatwootAttachment,
-  sendMessage,
+  sendMessage, createChatwootConversation,
 } from './chatwoot.js'
 import dotenv from 'dotenv';
 
@@ -41,18 +41,25 @@ export async function processVkMessage(ctx) {
   const contact = await getOrCreateChatwootContact(externalId)
 
   if(ctx.messagePayload === 'create_ticket') {
-    const conversation = await getOrCreateChatwootConversation(contact);
-    await setChatwootConversationStatus(conversation, 'open')
-    return;
-  }
-
-  if(ctx.messagePayload === 'problem_solved') {
-    const conversation = await getOrCreateChatwootConversation(contact);
-    await setChatwootConversationStatus(conversation, 'resolved')
+    await createChatwootConversation(contact);
+    // reply will be sent by chatwoot automation
     return;
   }
 
   const conversation = await findChatwootConversation(contact);
+
+  if(ctx.messagePayload === 'problem_solved') {
+    if(!conversation) {
+      await ctx.reply(`Главное меню`, {
+        keyboard: createNewTicketMenu,
+      });
+      return;
+    }
+
+    await setChatwootConversationStatus(conversation, 'resolved')
+    return;
+  }
+
 
   if (!conversation || conversation?.status !== 'open') {
     await ctx.reply(`Главное меню`, {

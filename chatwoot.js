@@ -73,7 +73,7 @@ export async function setChatwootConversationStatus(conversation, status) {
   return chatwoot.conversations(conversation.id).toggleStatus(conversation.id, status);
 }
 
-async function createChatwootConversation(contact) {
+export async function createChatwootConversation(contact) {
   const inbox = getChatwootContactInbox(contact)
   const { data } = await chatwoot.conversations(chatwootAccountId).create({
     source_id: inbox.source_id,
