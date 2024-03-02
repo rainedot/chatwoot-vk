@@ -42,8 +42,6 @@ export async function processVkMessage(ctx) {
 
   if(ctx.messagePayload === 'create_ticket') {
     await createChatwootConversation(contact);
-    // reply will be sent by chatwoot automation
-    return;
   }
 
   const conversation = await findChatwootConversation(contact);
