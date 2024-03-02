@@ -70,7 +70,7 @@ export async function findChatwootConversation(contact) {
  * @return {Promise<*>}
  */
 export async function setChatwootConversationStatus(conversation, status) {
-  return chatwoot.conversations(conversation.id).toggleStatus(conversation.id, status);
+  return chatwoot.conversations(chatwootAccountId).toggleStatus(conversation.id, status);
 }
 
 export async function createChatwootConversation(contact) {
