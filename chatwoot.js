@@ -3,63 +3,64 @@ import {closeTicketMenu, processVkAttachment, vk} from './vk.js'
 import axios from 'axios'
 import FormData from 'form-data'
 import dotenv from 'dotenv';
+
 dotenv.config();
 
 export const chatwootAccountId = Number(process.env.CHATWOOT_ACCOUNT_ID)
 export const chatwootInboxId = Number(process.env.CHATWOOT_INBOX_ID)
 
 export const chatwoot = new ChatwootClient({
-    config: {
-        host: process.env.CHATWOOT_HOST,
-        apiAccessToken: process.env.CHATWOOT_ACCESS_TOKEN,
-    },
+  config: {
+    host: process.env.CHATWOOT_HOST,
+    apiAccessToken: process.env.CHATWOOT_ACCESS_TOKEN,
+  },
 })
 
 export async function getOrCreateChatwootContact(userId) {
-    const contact = await findChatwootContact(userId)
-    if (!contact) return await createChatwootContact(userId)
-    return contact
+  const contact = await findChatwootContact(userId)
+  if (!contact) return await createChatwootContact(userId)
+  return contact
 }
 
 async function findChatwootContact(externalId) {
-    const { data } = await chatwoot.contacts(chatwootAccountId).search(externalId)
+  const { data } = await chatwoot.contacts(chatwootAccountId).search(externalId)
 
-    if (!data.payload || data.payload.length === 0) return null
-    return data.payload.filter(contact => typeof getChatwootContactInbox(contact) !== 'undefined')
-        .sort((a, b) => b.id - a.id)[0]
+  if (!data.payload || data.payload.length === 0) return null
+  return data.payload.filter(contact => typeof getChatwootContactInbox(contact) !== 'undefined')
+    .sort((a, b) => b.id - a.id)[0]
 }
 
 function getChatwootContactInbox(contact) {
-    return contact['contact_inboxes'].find(contactInbox => contactInbox['inbox'].id === chatwootInboxId)
+  return contact['contact_inboxes'].find(contactInbox => contactInbox['inbox'].id === chatwootInboxId)
 }
 
 async function createChatwootContact(externalId) {
-    const [ user ] = await vk.api.users.get({
-        user_ids: [ externalId ],
-        fields: [ 'photo_100', 'screen_name' ]
-    })
+  const [user] = await vk.api.users.get({
+    user_ids: [externalId],
+    fields: ['photo_100', 'screen_name']
+  })
 
-    const { data } = await chatwoot.contacts(chatwootAccountId).create({
-        inbox_id: chatwootInboxId,
-        name: `${ user.first_name } ${ user.last_name }`,
-        avatar_url: user.photo_100,
-        identifier: externalId,
-    })
+  const { data } = await chatwoot.contacts(chatwootAccountId).create({
+    inbox_id: chatwootInboxId,
+    name: `${user.first_name} ${user.last_name}`,
+    avatar_url: user.photo_100,
+    identifier: externalId,
+  })
 
-    return data.payload['contact']
+  return data.payload['contact']
 }
 
 export async function getOrCreateChatwootConversation(contact) {
-    const conversation = await findChatwootConversation(contact)
-    if (!conversation) return await createChatwootConversation(contact)
-    return conversation
+  const conversation = await findChatwootConversation(contact)
+  if (!conversation) return await createChatwootConversation(contact)
+  return conversation
 }
 
 export async function findChatwootConversation(contact) {
-    const { data } = await chatwoot.contacts(chatwootAccountId).getConversationsByContactId(contact.id)
-    if (!data.payload || data.payload.length === 0) return null
-    return data.payload.filter(conversation => conversation['inbox_id'] === chatwootInboxId)
-        .sort((a, b) => b.id - a.id)[0]
+  const { data } = await chatwoot.contacts(chatwootAccountId).getConversationsByContactId(contact.id)
+  if (!data.payload || data.payload.length === 0) return null
+  return data.payload.filter(conversation => conversation['inbox_id'] === chatwootInboxId)
+    .sort((a, b) => b.id - a.id)[0]
 }
 
 /**
@@ -69,81 +70,81 @@ export async function findChatwootConversation(contact) {
  * @return {Promise<*>}
  */
 export async function setChatwootConversationStatus(contact, status) {
-    const { data: { payload } } = await chatwoot.contacts(chatwootAccountId).getConversationsByContactId(contact.id)
+  const { data: { payload } } = await chatwoot.contacts(chatwootAccountId).getConversationsByContactId(contact.id)
 
-    if(!payload?.[0]) throw new Error('Conversation not found(0)');
-    const conversation = payload[0];
+  if (!payload?.[0]) throw new Error('Conversation not found(0)');
+  const conversation = payload[0];
 
-    return chatwoot.conversations(conversation.id).toggleStatus(conversation.id, status);
+  return chatwoot.conversations(conversation.id).toggleStatus(conversation.id, status);
 }
 
 async function createChatwootConversation(contact) {
-    const inbox = getChatwootContactInbox(contact)
-    const { data } = await chatwoot.conversations(chatwootAccountId).create({
-        source_id: inbox.source_id,
-    })
-    return data
+  const inbox = getChatwootContactInbox(contact)
+  const { data } = await chatwoot.conversations(chatwootAccountId).create({
+    source_id: inbox.source_id,
+  })
+  return data
 }
 
 export async function processChatwootMessage(data) {
-    if (!data.content && data.attachments.length === 0) {
-        console.log(`Invalid content for message without attachments: ${ data.content }`)
-        return
+  if (!data.content && data.attachments.length === 0) {
+    console.log(`Invalid content for message without attachments: ${data.content}`)
+    return
+  }
+
+  const conversation = data['conversation']
+  const contactInbox = conversation['contact_inbox']
+  const { data: contactResponse } = await chatwoot.contacts(chatwootAccountId).show(contactInbox.contact_id)
+
+  if (!contactResponse.payload) {
+    console.log(`Unable to fetch contact for conversation ${conversation.id}`)
+    return
+  }
+
+  const { payload: contact } = contactResponse
+
+  const attachments = []
+  if (data.attachments) {
+    for (const attachment of data.attachments) {
+      attachments.push(await processVkAttachment(attachment))
     }
+  }
 
-    const conversation = data['conversation']
-    const contactInbox = conversation['contact_inbox']
-    const { data: contactResponse } = await chatwoot.contacts(chatwootAccountId).show(contactInbox.contact_id)
-
-    if (!contactResponse.payload) {
-        console.log(`Unable to fetch contact for conversation ${ conversation.id }`)
-        return
-    }
-
-    const { payload: contact } = contactResponse
-
-    const attachments = []
-    if (data.attachments) {
-        for (const attachment of data.attachments) {
-            attachments.push(await processVkAttachment(attachment))
-        }
-    }
-
-    await vk.api.messages.send({
-        user_id: contact.identifier,
-        message: data.content ?? '',
-        attachment: attachments.map(a => a.toString()).join(','),
-        random_id: Math.floor(Math.random() * Math.pow(10, 100)),
-        keyboard: closeTicketMenu,
-    })
+  await vk.api.messages.send({
+    user_id: contact.identifier,
+    message: data.content ?? '',
+    attachment: attachments.map(a => a.toString()).join(','),
+    random_id: Math.floor(Math.random() * Math.pow(10, 100)),
+    keyboard: conversation.status === 'resolved' ? closeTicketMenu : undefined,
+  })
 }
 
 export async function sendMessage(conversationId, params, files = []) {
-    if (!files) return await chatwoot.conversations(chatwootAccountId).sendMessage(conversationId, params)
-    chatwoot.conversations(chatwootAccountId)
-    const form = new FormData()
-    form.append('content', params.content ?? '')
-    form.append('message_type', params.message_type)
-    files.forEach(file => form.append('attachments[]', file))
+  if (!files) return await chatwoot.conversations(chatwootAccountId).sendMessage(conversationId, params)
+  chatwoot.conversations(chatwootAccountId)
+  const form = new FormData()
+  form.append('content', params.content ?? '')
+  form.append('message_type', params.message_type)
+  files.forEach(file => form.append('attachments[]', file))
 
-    // noinspection JSCheckFunctionSignatures
-    return await chatwoot.client.post(
-        `${ chatwoot.conversations(chatwootAccountId).path }/${ conversationId }/messages`, form,
-        { headers: { ...form.getHeaders() }}
-    )
+  // noinspection JSCheckFunctionSignatures
+  return await chatwoot.client.post(
+    `${chatwoot.conversations(chatwootAccountId).path}/${conversationId}/messages`, form,
+    { headers: { ...form.getHeaders() } }
+  )
 }
 
 export async function processChatwootAttachment(attachment) {
-    switch (attachment.type) {
-        case 'photo':
-            const photo = attachment.photo
-            const sizes = photo.sizes.sort((a, b) => (b.width + b.height) - (a.width + a.height))
-            const response = await axios.get(sizes[0].url, {
-                responseType: 'stream'
-            })
-            return response.data
-        default:
-            console.warn(`Skipping attachment with unsupported type: ${ attachment.type }`)
-            break
-    }
+  switch (attachment.type) {
+    case 'photo':
+      const photo = attachment.photo
+      const sizes = photo.sizes.sort((a, b) => (b.width + b.height) - (a.width + a.height))
+      const response = await axios.get(sizes[0].url, {
+        responseType: 'stream'
+      })
+      return response.data
+    default:
+      console.warn(`Skipping attachment with unsupported type: ${attachment.type}`)
+      break
+  }
 }
