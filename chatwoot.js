@@ -110,13 +110,16 @@ export async function processChatwootMessage(data) {
     }
   }
 
-  await vk.api.messages.send({
-    user_id: contact.identifier,
-    message: data.content ?? '',
-    attachment: attachments.map(a => a.toString()).join(','),
-    random_id: Math.floor(Math.random() * Math.pow(10, 100)),
-    keyboard: conversation.status === 'resolved' ? createNewTicketMenu : closeTicketMenu,
-  })
+  console.log(
+    await vk.api.messages.send({
+      user_id: contact.identifier,
+      message: data.content ?? '',
+      attachment: attachments.map(a => a.toString()).join(','),
+      random_id: Math.floor(Math.random() * Math.pow(10, 100)),
+      keyboard: conversation.status === 'resolved' ? createNewTicketMenu : closeTicketMenu,
+    }),
+    'vk ressp'
+  )
 }
 
 export async function sendMessage(conversationId, params, files = []) {

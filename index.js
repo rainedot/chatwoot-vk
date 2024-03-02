@@ -27,6 +27,7 @@ async function handleChatwootWebhook() {
 
   app.post('/', (req, res) => {
     try {
+      console.log(req.body);
       if (req.body.event === 'message_created' && req.body.message_type === 'outgoing') {
         processChatwootMessage(req.body)
       }
