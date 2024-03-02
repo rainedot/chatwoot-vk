@@ -26,8 +26,14 @@ async function handleChatwootWebhook() {
   app.use(express.json())
 
   app.post('/', (req, res) => {
-    if (req.body.event === 'message_created' && req.body.message_type === 'outgoing') {
-      processChatwootMessage(req.body).catch(console.error)
+    try {
+      if (req.body.event === 'message_created' && req.body.message_type === 'outgoing') {
+        processChatwootMessage(req.body)
+      }
+    } catch (e) {
+      console.log(e);
+      res.sendStatus(500);
+      return;
     }
 
     res.sendStatus(200)
