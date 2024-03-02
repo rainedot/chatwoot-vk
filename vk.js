@@ -15,10 +15,10 @@ export const vk = new VK({
 })
 
 export const createNewTicketMenu = Keyboard.builder()
-  .textButton({label: 'Create a new ticket', payload: 'create_ticket', color: 'positive'})
+  .textButton({label: 'Позвать человека', payload: 'create_ticket', color: 'primary'})
 
 export const closeTicketMenu = Keyboard.builder()
-  .textButton({ label: 'Problem has been solved', payload: 'problem_solved' });
+  .textButton({ label: 'Проблема была решена', payload: 'problem_solved', color: 'positive' });
 
 /**
  * @param {MessageContext<ContextDefaultState> & {}} ctx
@@ -52,7 +52,7 @@ export async function processVkMessage(ctx) {
   }
 
   if (conversation.status !== 'open') {
-    await ctx.reply(`You don't have an active ticket.`, {
+    await ctx.reply(`Главное меню`, {
       keyboard: createNewTicketMenu,
     });
 
