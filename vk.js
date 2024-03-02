@@ -39,7 +39,7 @@ export async function processVkMessage(ctx) {
 
   const externalId = message.from_id
   const contact = await getOrCreateChatwootContact(externalId)
-  const conversation = await findChatwootConversation(contact);
+  const conversation = await getOrCreateChatwootConversation(contact);
 
   if(ctx.messagePayload === 'create_ticket') {
     await setChatwootConversationStatus(contact, 'open')
