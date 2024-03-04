@@ -38,17 +38,31 @@ export async function processVkMessage(ctx) {
   return data
 }
 
-export async function processVkAttachment(attachment) {
-  switch (attachment['file_type']) {
-    case 'image':
-      return await vk.upload.messagePhoto({
-        source: {
-          value: attachment['data_url']
-        }
-      })
-    default:
-      console.warn(`Skipping attachment with unsupported type: ${attachment['file_type']}`)
-      break
+export async function processVkAttachment(attachment, vkUserId) {
+  try {
+    switch (attachment['file_type']) {
+      case 'image':
+        return await vk.upload.messagePhoto({
+          source: {
+            value: attachment['data_url']
+          }
+        })
+      case 'file':
+        const splittedPath = attachment.data_url.split('/');
+        const filename = splittedPath[splittedPath.length - 1];
+        return await vk.upload.messageDocument({
+          peer_id: vkUserId,
+          source: {
+            filename: filename,
+            value: attachment['data_url']
+          }
+        })
+      default:
+        console.warn(`Skipping attachment with unsupported type: ${attachment['file_type']}`)
+        break
+    }
+  } catch (e) {
+    console.error('Error processing attachment', attachment, e);
   }
 }
 

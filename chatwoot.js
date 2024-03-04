@@ -105,8 +105,18 @@ export async function processChatwootMessage(data) {
   const attachments = []
   if (data.attachments) {
     for (const attachment of data.attachments) {
-      attachments.push(await processVkAttachment(attachment))
+      const cwFile = await processVkAttachment(attachment, contact.identifier)
+
+      if(!cwFile) {
+        continue;
+      }
+      attachments.push(cwFile)
     }
+  }
+
+  if(!data.content && attachments.length === 0) {
+    return;
+    //throw new Error('no content and no attachment')
   }
 
   await vk.api.messages.send({
@@ -133,11 +143,19 @@ export async function sendMessage(conversationId, params, files = []) {
 }
 
 export async function processChatwootAttachment(attachment) {
+  let sizes;
+  let response;
   switch (attachment.type) {
     case 'photo':
       const photo = attachment.photo
-      const sizes = photo.sizes.sort((a, b) => (b.width + b.height) - (a.width + a.height))
-      const response = await axios.get(sizes[0].url, {
+      sizes = photo.sizes.sort((a, b) => (b.width + b.height) - (a.width + a.height))
+      response = await axios.get(sizes[0].url, {
+        responseType: 'stream'
+      })
+      return response.data
+    case 'doc':
+      const doc = attachment.doc
+      response = await axios.get(doc.url, {
         responseType: 'stream'
       })
       return response.data

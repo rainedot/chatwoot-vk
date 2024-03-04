@@ -37,16 +37,17 @@ async function handleChatwootWebhook() {
     res.sendStatus(200)
   })
 
-  await app.listen(bindPort);
+  await app.listen(bindPort, () => {
+    console.log(`express started, port: ${bindPort}`)
+  });
 }
 
-Promise.all([
-  vk.updates.start(),
-  handleChatwootWebhook(),
-])
+vk.updates.start()
   .then(() => {
-    console.log(`Application started.\n Webhook port: ${bindPort}`)
+    console.log('polling started')
   })
   .catch(() => {
-    console.log('some app err occured')
+    console.log('vk updates tried to crash')
   })
+handleChatwootWebhook()
+
