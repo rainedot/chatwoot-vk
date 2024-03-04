@@ -1,5 +1,5 @@
 import {processChatwootMessage} from './chatwoot.js'
-import {processStart, processVkMessage, processVkTypingState, vk} from './vk.js'
+import {processVkMessage, processVkTypingState, vk} from './vk.js'
 import express from 'express'
 import dotenv from 'dotenv';
 
@@ -10,11 +10,9 @@ const bindPort = process.env.APP_PORT;
 vk.updates.on('message_new', context => {
   if (!context.isUser || !context.isFromUser) return
 
+
   processVkMessage(context).then().catch(console.error)
 })
-
-vk.updates.on('message_allow', processStart);
-
 
 vk.updates.on('message_typing_state', context => {
   if (!context.isUser) return
@@ -48,4 +46,7 @@ Promise.all([
 ])
   .then(() => {
     console.log(`Application started.\n Webhook port: ${bindPort}`)
+  })
+  .catch(() => {
+    console.log('some app err occured')
   })

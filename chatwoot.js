@@ -1,5 +1,5 @@
 import ChatwootClient from '@chatwoot/node'
-import {closeTicketMenu, createNewTicketMenu, processVkAttachment, vk} from './vk.js'
+import {processVkAttachment, vk} from './vk.js'
 import axios from 'axios'
 import FormData from 'form-data'
 import dotenv from 'dotenv';
@@ -86,14 +86,18 @@ export async function processChatwootMessage(data) {
     console.log(`Invalid content for message without attachments: ${data.content}`)
     return
   }
+  if(data.private) {
+    return;
+  }
 
   const conversation = data['conversation']
+
   const contactInbox = conversation['contact_inbox']
   const { data: contactResponse } = await chatwoot.contacts(chatwootAccountId).show(contactInbox.contact_id)
 
+
   if (!contactResponse.payload) {
-    console.log(`Unable to fetch contact for conversation ${conversation.id}`)
-    return
+    throw new Error(`Unable to fetch contact for conversation ${conversation.id}`)
   }
 
   const { payload: contact } = contactResponse
@@ -109,7 +113,6 @@ export async function processChatwootMessage(data) {
     user_id: contact.identifier,
     message: data.content ?? '',
     attachment: attachments.length === 0 ? undefined : attachments.map(a => a.toString()).join(','),
-    keyboard: conversation.status === 'resolved' ? createNewTicketMenu : closeTicketMenu,
     random_id: (new Date()).getTime(),
   });
 }

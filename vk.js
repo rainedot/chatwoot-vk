@@ -1,10 +1,10 @@
-import {Keyboard, VK} from 'vk-io'
+import {VK} from 'vk-io'
 import {
-  chatwoot, chatwootAccountId, findChatwootConversation,
+  chatwoot, chatwootAccountId,
   getOrCreateChatwootContact,
-  getOrCreateChatwootConversation, setChatwootConversationStatus,
+  getOrCreateChatwootConversation,
   processChatwootAttachment,
-  sendMessage, createChatwootConversation,
+  sendMessage,
 } from './chatwoot.js'
 import dotenv from 'dotenv';
 
@@ -14,23 +14,6 @@ export const vk = new VK({
   token: process.env.VK_ACCESS_TOKEN,
 })
 
-export const createNewTicketMenu = Keyboard.builder()
-  .textButton({label: 'Позвать человека', payload: 'create_ticket', color: 'primary'})
-
-export const closeTicketMenu = Keyboard.builder()
-  .textButton({ label: 'Проблема была решена', payload: 'problem_solved', color: 'positive' });
-
-/**
- * @param {MessageContext<ContextDefaultState> & {}} ctx
- */
-export async function processStart(ctx) {
-  await ctx.reply(`
-    Hello.
-    
-    If you have any issue press the "Create a new ticket".
-  `)
-}
-
 /**
  * @param {MessageContext<ContextDefaultState> & {}} ctx
  */
@@ -39,33 +22,7 @@ export async function processVkMessage(ctx) {
 
   const externalId = message.from_id
   const contact = await getOrCreateChatwootContact(externalId)
-
-  if(ctx.messagePayload === 'create_ticket') {
-    await createChatwootConversation(contact);
-  }
-
-  const conversation = await findChatwootConversation(contact);
-
-  if(ctx.messagePayload === 'problem_solved') {
-    if(!conversation) {
-      await ctx.reply(`Главное меню`, {
-        keyboard: createNewTicketMenu,
-      });
-      return;
-    }
-
-    await setChatwootConversationStatus(conversation, 'resolved')
-    return;
-  }
-
-
-  if (!conversation || conversation?.status !== 'open') {
-    await ctx.reply(`Главное меню`, {
-      keyboard: createNewTicketMenu,
-    });
-
-    return;
-  }
+  const conversation = await getOrCreateChatwootConversation(contact);
 
   const attachments = []
   for (const attachment of message.attachments) {
